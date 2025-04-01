@@ -1,10 +1,13 @@
-import React from 'react';
 import { Sparkles, Mail, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const handlePrivacyClick = () => {
     window.open('https://www.socialrise.ru/privacy', '_blank');
+  };
+
+  const handleTermsClick = () => {
+    window.open('https://www.socialrise.ru/terms_of_service', '_blank');
   };
 
   return (
@@ -83,13 +86,18 @@ const Footer = () => {
               </div>
             </div>
             <div className="flex flex-col md:flex-row md:justify-end space-y-4 md:space-y-0 md:space-x-6">
-              <button 
+               <button 
                 onClick={handlePrivacyClick}
                 className="text-gray-400 hover:text-white transition-colors text-sm"
               >
                 Политика конфиденциальности
               </button>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Условия использования</a>
+              <button 
+                onClick={handleTermsClick}
+                className="text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                Пользовательское соглашение
+              </button>
               <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Политика cookies</a>
             </div>
           </div>
