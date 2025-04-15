@@ -115,7 +115,6 @@ const Trends = () => {
       engagement: 3.8,
       engagementChange: -0.3
     },
-    // ... остальные посты остаются без изменений, добавляем только новые поля
     {
       id: '3',
       imageUrl: 'https://images.unsplash.com/photo-1534126511673-b6899657816a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
@@ -355,9 +354,9 @@ const Trends = () => {
       ) : sortedPosts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedPosts.map((post) => (
-            <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
               {/* Превью контента */}
-              <div className="relative aspect-[4/3]">
+              <div className="relative aspect-[4/5]">
                 {post.imageUrl ? (
                   <img 
                     src={post.imageUrl} 
@@ -378,7 +377,7 @@ const Trends = () => {
               </div>
 
               {/* Информация о посте */}
-              <div className="p-4">
+              <div className="p-4 flex-1 flex flex-col">
                 {/* Канал и платформа */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
@@ -435,7 +434,7 @@ const Trends = () => {
                 {/* Кнопка генерации */}
                 <button
                   onClick={() => handleGenerateSimilar(post)}
-                  className="w-full py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors text-sm flex items-center justify-center"
+                  className="w-full py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors text-sm flex items-center justify-center mt-auto"
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Сгенерировать похожее

@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   TrendingUp, 
-  Calendar, 
   Settings,
   LogOut,
   BookOpen,
@@ -15,7 +14,6 @@ import {
   FileText,
   Search,
   X,
-  BarChart3,
   Building2,
   ChevronRight
 } from 'lucide-react';
@@ -52,7 +50,6 @@ const DashboardLayout = () => {
 
   const menuItems = [
     { path: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Главная' },
-    { path: '/dashboard/analytics', icon: <BarChart3 size={20} />, label: 'Аналитика' },
     { path: '/dashboard/content-ideas', icon: <Sparkles size={20} />, label: 'Идеи контента' },
     { path: '/dashboard/trends', icon: <TrendingUp size={20} />, label: 'Тренды' },
     { 
@@ -67,7 +64,6 @@ const DashboardLayout = () => {
         { path: '/dashboard/brand/social', label: 'Социальные сети' },
       ]
     },
-    { path: '/dashboard/calendar', icon: <Calendar size={20} />, label: 'Календарь' },
     { path: '/dashboard/settings', icon: <Settings size={20} />, label: 'Настройки' },
     ...(isAdmin ? [{ path: '/dashboard/cases', icon: <BookOpen size={20} />, label: 'Кейсы' }] : []),
   ];
