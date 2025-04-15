@@ -2,18 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   Search, 
-  Play, 
   MessageSquare, 
   Heart, 
-  BarChart2, 
-  ArrowUp, 
-  Eye, 
-  ChevronRight, 
-  Calendar, 
-  Clock, 
-  RefreshCw, 
+  BarChart2,
   ExternalLink,
-  Image
+  Image,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -27,17 +23,57 @@ interface TrendPost {
   timestamp: string;
   externalUrl: string;
   hashtags: string[];
-  platform: 'instagram' | 'tiktok';
+  platform: 'instagram' | 'youtube' | 'tiktok' | 'facebook';
+  type: 'post' | 'reel' | 'video';
+}
+
+interface DateRange {
+  start: Date;
+  end: Date;
 }
 
 const Trends = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'top' | 'recent'>('top');
-  const [selectedHashtag, setSelectedHashtag] = useState<string>('');
-  const [customHashtag, setCustomHashtag] = useState<string>('');
-  const [timePeriod, setTimePeriod] = useState<'24h' | '7d'>('24h');
-  const [sortBy, setSortBy] = useState<'likes' | 'growth' | 'engagement'>('likes');
+  const [selectedPeriod, setSelectedPeriod] = useState<'24h' | '7d' | 'custom'>('24h');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    start: new Date(),
+    end: new Date()
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState<string>('');
+  const [selectedContentType, setSelectedContentType] = useState<'post' | 'reel' | 'video' | ''>('');
+  const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'youtube' | 'tiktok' | 'facebook' | ''>('');
   const [loading, setLoading] = useState(false);
+
+  // Категории бизнеса
+  const categories = [
+    'Бьюти',
+    'Спорт и фитнес',
+    'Еда и рестораны',
+    'Мода',
+    'Технологии',
+    'Образование',
+    'Путешествия',
+    'Здоровье',
+    'Бизнес',
+    'Развлечения'
+  ];
+
+  // Типы контента
+  const contentTypes = [
+    { value: 'post', label: 'Пост' },
+    { value: 'reel', label: 'Reels' },
+    { value: 'video', label: 'Видео' }
+  ];
+
+  // Платформы
+  const platforms = [
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'tiktok', label: 'TikTok' },
+    { value: 'facebook', label: 'Facebook' }
+  ];
 
   // Sample trending posts data
   const [trendingPosts, setTrendingPosts] = useState<TrendPost[]>([
@@ -50,7 +86,8 @@ const Trends = () => {
       timestamp: '2025-05-15T08:30:00Z',
       externalUrl: 'https://instagram.com/p/example1',
       hashtags: ['#успех', '#саморазвитие', '#мотивация'],
-      platform: 'instagram'
+      platform: 'instagram',
+      type: 'post'
     },
     {
       id: '2',
@@ -59,9 +96,10 @@ const Trends = () => {
       likes: 890,
       comments: 230,
       timestamp: '2025-05-14T15:45:00Z',
-      externalUrl: 'https://instagram.com/p/example2',
+      externalUrl: 'https://youtube.com/watch?v=example2',
       hashtags: ['#дизайн', '#интерьер', '#тренды2025'],
-      platform: 'instagram'
+      platform: 'youtube',
+      type: 'video'
     },
     {
       id: '3',
@@ -72,81 +110,58 @@ const Trends = () => {
       timestamp: '2025-05-15T07:15:00Z',
       externalUrl: 'https://tiktok.com/@user/video/example3',
       hashtags: ['#утро', '#продуктивность', '#рутина'],
-      platform: 'tiktok'
-    },
-    {
-      id: '4',
-      imageUrl: 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-      caption: 'Новый тренд в макияже: #lattemakeup покоряет соцсети! Показываю, как повторить этот образ',
-      likes: 7800,
-      comments: 1240,
-      timestamp: '2025-05-14T19:20:00Z',
-      externalUrl: 'https://instagram.com/p/example4',
-      hashtags: ['#lattemakeup', '#макияж', '#бьютитренд'],
-      platform: 'instagram'
-    },
-    {
-      id: '5',
-      imageUrl: 'https://images.unsplash.com/photo-1604106314724-d3e77444c2b2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-      caption: 'Минималистичный #nailart, который подойдет для любого случая #маникюр #минимализм',
-      likes: 3400,
-      comments: 520,
-      timestamp: '2025-05-15T12:10:00Z',
-      externalUrl: 'https://instagram.com/p/example5',
-      hashtags: ['#nailart', '#маникюр', '#минимализм'],
-      platform: 'instagram'
+      platform: 'tiktok',
+      type: 'reel'
     }
   ]);
 
-  const popularHashtags = [
-    '#lattemakeup',
-    '#nailart',
-    '#утренняярутина',
-    '#интерьер2025',
-    '#саморазвитие',
-    '#продуктивность'
-  ];
-
   useEffect(() => {
-    // This would be where you fetch data from an API based on filters
+    // Здесь будет логика загрузки данных с учетом фильтров
     const fetchTrendingPosts = async () => {
       setLoading(true);
       try {
-        // Simulate API call
+        // Имитация API запроса
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // In a real app, you would fetch data based on filters
-        // For now, we'll just filter the existing data
         let filteredPosts = [...trendingPosts];
         
-        // Filter by hashtag if selected
-        const hashtagToFilter = selectedHashtag || customHashtag;
-        if (hashtagToFilter) {
+        // Фильтрация по категории
+        if (selectedCategory || customCategory) {
+          const category = selectedCategory || customCategory;
           filteredPosts = filteredPosts.filter(post => 
-            post.hashtags.some(tag => tag.toLowerCase().includes(hashtagToFilter.toLowerCase())) ||
-            post.caption.toLowerCase().includes(hashtagToFilter.toLowerCase())
+            post.caption.toLowerCase().includes(category.toLowerCase()) ||
+            post.hashtags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
           );
         }
         
-        // Filter by time period
+        // Фильтрация по типу контента
+        if (selectedContentType) {
+          filteredPosts = filteredPosts.filter(post => post.type === selectedContentType);
+        }
+        
+        // Фильтрация по платформе
+        if (selectedPlatform) {
+          filteredPosts = filteredPosts.filter(post => post.platform === selectedPlatform);
+        }
+        
+        // Фильтрация по периоду
         const now = new Date();
-        const timeLimit = timePeriod === '24h' 
-          ? new Date(now.getTime() - 24 * 60 * 60 * 1000) 
-          : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        let timeLimit: Date;
         
-        filteredPosts = filteredPosts.filter(post => new Date(post.timestamp) > timeLimit);
-        
-        // Sort posts
-        if (sortBy === 'likes') {
-          filteredPosts.sort((a, b) => b.likes - a.likes);
-        } else if (sortBy === 'engagement') {
-          filteredPosts.sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments));
+        if (selectedPeriod === '24h') {
+          timeLimit = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        } else if (selectedPeriod === '7d') {
+          timeLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else {
+          timeLimit = dateRange.start;
         }
         
-        // Filter by tab
-        if (activeTab === 'recent') {
-          filteredPosts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        }
+        filteredPosts = filteredPosts.filter(post => {
+          const postDate = new Date(post.timestamp);
+          return selectedPeriod === 'custom'
+            ? postDate >= dateRange.start && postDate <= dateRange.end
+            : postDate >= timeLimit;
+        });
         
         setTrendingPosts(filteredPosts);
       } catch (error) {
@@ -157,20 +172,7 @@ const Trends = () => {
     };
 
     fetchTrendingPosts();
-  }, [selectedHashtag, customHashtag, timePeriod, sortBy, activeTab]);
-
-  const handleSearch = () => {
-    setCustomHashtag(searchQuery);
-    setSelectedHashtag('');
-  };
-
-  const handleRefresh = () => {
-    setLoading(true);
-    // Simulate refresh
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  };
+  }, [selectedPeriod, dateRange, selectedCategory, customCategory, selectedContentType, selectedPlatform]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -183,138 +185,169 @@ const Trends = () => {
 
       {/* Фильтры */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Поиск хештега */}
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Период */}
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Хештег или тема
+              Период
+            </label>
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg hover:border-[#2D46B9] focus:outline-none focus:ring-2 focus:ring-[#2D46B9]"
+            >
+              <span className="flex items-center">
+                <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
+                {selectedPeriod === '24h' ? 'Последние 24 часа' :
+                 selectedPeriod === '7d' ? 'Последние 7 дней' :
+                 'Выбрать период'}
+              </span>
+              <ChevronDown className="h-5 w-5 text-gray-500" />
+            </button>
+            
+            {showDatePicker && (
+              <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setSelectedPeriod('24h');
+                      setShowDatePicker(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    Последние 24 часа
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedPeriod('7d');
+                      setShowDatePicker(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    Последние 7 дней
+                  </button>
+                  <hr className="my-2" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Свой период:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={format(dateRange.start, 'yyyy-MM-dd')}
+                        onChange={(e) => setDateRange(prev => ({
+                          ...prev,
+                          start: new Date(e.target.value)
+                        }))}
+                        className="px-2 py-1 border border-gray-300 rounded-lg"
+                      />
+                      <input
+                        type="date"
+                        value={format(dateRange.end, 'yyyy-MM-dd')}
+                        onChange={(e) => setDateRange(prev => ({
+                          ...prev,
+                          end: new Date(e.target.value)
+                        }))}
+                        className="px-2 py-1 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedPeriod('custom');
+                        setShowDatePicker(false);
+                      }}
+                      className="w-full px-4 py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90"
+                    >
+                      Применить
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Сфера */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Сфера
             </label>
             <div className="relative">
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Введите хештег или тему..."
-                className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
-              />
-              <button
-                onClick={handleSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-[#2D46B9]"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Выбор периода */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Период
-            </label>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setTimePeriod('24h')}
-                className={`flex items-center px-4 py-3 rounded-lg border ${
-                  timePeriod === '24h'
-                    ? 'bg-[#2D46B9] text-white border-[#2D46B9]'
-                    : 'border-gray-300 text-gray-700 hover:border-[#2D46B9]'
-                }`}
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Последние 24 часа
-              </button>
-              <button
-                onClick={() => setTimePeriod('7d')}
-                className={`flex items-center px-4 py-3 rounded-lg border ${
-                  timePeriod === '7d'
-                    ? 'bg-[#2D46B9] text-white border-[#2D46B9]'
-                    : 'border-gray-300 text-gray-700 hover:border-[#2D46B9]'
-                }`}
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Последние 7 дней
-              </button>
-            </div>
-          </div>
-
-          {/* Сортировка */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Сортировка
-            </label>
-            <div className="flex">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
-              >
-                <option value="likes">По популярности</option>
-                <option value="growth">По приросту</option>
-                <option value="engagement">По вовлеченности</option>
-              </select>
-              <button
-                onClick={handleRefresh}
-                className="ml-2 p-3 text-gray-600 hover:text-[#2D46B9] border border-gray-300 rounded-lg hover:border-[#2D46B9]"
-                disabled={loading}
-              >
-                <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Популярные хештеги */}
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Популярные хештеги
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {popularHashtags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  setSelectedHashtag(tag);
-                  setCustomHashtag('');
-                  setSearchQuery('');
+                value={customCategory || selectedCategory}
+                onChange={(e) => {
+                  setCustomCategory(e.target.value);
+                  setSelectedCategory('');
                 }}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  selectedHashtag === tag
-                    ? 'bg-[#2D46B9] text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+                placeholder="Выберите или введите сферу..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+              />
+              {(customCategory || selectedCategory) && (
+                <button
+                  onClick={() => {
+                    setCustomCategory('');
+                    setSelectedCategory('');
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {categories.slice(0, 3).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setCustomCategory('');
+                  }}
+                  className={`px-3 py-1 text-sm rounded-full ${
+                    selectedCategory === category
+                      ? 'bg-[#2D46B9] text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Переключатель типа контента */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setActiveTab('top')}
-            className={`px-6 py-3 rounded-lg flex items-center ${
-              activeTab === 'top'
-                ? 'bg-[#2D46B9] text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:border-[#2D46B9]'
-            } transition-colors`}
-          >
-            <TrendingUp className="h-5 w-5 mr-2" />
-            ТОП за {timePeriod === '24h' ? '24 часа' : '7 дней'}
-          </button>
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={`px-6 py-3 rounded-lg flex items-center ${
-              activeTab === 'recent'
-                ? 'bg-[#2D46B9] text-white'
-                : 'bg-white border border-gray-200 text-gray-700 hover:border-[#2D46B9]'
-            } transition-colors`}
-          >
-            <Clock className="h-5 w-5 mr-2" />
-            Новое
-          </button>
+          {/* Тип контента */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Тип контента
+            </label>
+            <select
+              value={selectedContentType}
+              onChange={(e) => setSelectedContentType(e.target.value as any)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+            >
+              <option value="">Все типы</option>
+              {contentTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Источник */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Источник
+            </label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value as any)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+            >
+              <option value="">Все платформы</option>
+              {platforms.map(platform => (
+                <option key={platform.value} value={platform.value}>
+                  {platform.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -322,7 +355,7 @@ const Trends = () => {
       <div className="space-y-6">
         {loading ? (
           <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
-            <RefreshCw className="h-8 w-8 text-[#2D46B9] animate-spin" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D46B9]"></div>
             <span className="ml-3 text-gray-600">Загрузка трендов...</span>
           </div>
         ) : trendingPosts.length > 0 ? (
@@ -346,9 +379,12 @@ const Trends = () => {
                   )}
                   <div className="mt-2 flex items-center justify-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      post.platform === 'instagram' ? 'bg-pink-100 text-pink-800' : 'bg-black text-white'
+                      post.platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
+                      post.platform === 'youtube' ? 'bg-red-100 text-red-800' :
+                      post.platform === 'tiktok' ? 'bg-black text-white' :
+                      'bg-blue-100 text-blue-800'
                     }`}>
-                      {post.platform === 'instagram' ? 'Instagram' : 'TikTok'}
+                      {platforms.find(p => p.value === post.platform)?.label}
                     </span>
                   </div>
                 </div>
@@ -421,7 +457,7 @@ const Trends = () => {
               <Search className="h-12 w-12 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-700">Тренды не найдены</h3>
               <p className="text-gray-500 mt-2">
-                Попробуйте изменить параметры поиска или выбрать другой хештег
+                Попробуйте изменить параметры поиска или выбрать другую сферу
               </p>
             </div>
           </div>
