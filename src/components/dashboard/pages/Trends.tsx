@@ -234,18 +234,20 @@ const Trends = () => {
     );
   };
 
-  const sortedPosts = [...trendingPosts].sort((a, b) => {
-    switch (sortBy) {
-      case 'likes':
-        return b.likes - a.likes;
-      case 'comments':
-        return b.comments - a.comments;
-      case 'engagement':
-        return b.engagement - a.engagement;
-      default:
-        return 0;
-    }
-  });
+  const sortedPosts = [...trendingPosts]
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'likes':
+          return b.likes - a.likes;
+        case 'comments':
+          return b.comments - a.comments;
+        case 'engagement':
+          return b.engagement - a.engagement;
+        default:
+          return 0;
+      }
+    })
+    .slice(0, 8);
 
   return (
     <div>
@@ -352,11 +354,11 @@ const Trends = () => {
           <span className="ml-3 text-gray-600">Загрузка трендов...</span>
         </div>
       ) : sortedPosts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {sortedPosts.map((post) => (
-            <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+            <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col h-full">
               {/* Превью контента */}
-              <div className="relative aspect-[4/5]">
+              <div className="relative aspect-[4/5] w-full">
                 {post.imageUrl ? (
                   <img 
                     src={post.imageUrl} 
@@ -380,22 +382,35 @@ const Trends = () => {
               <div className="p-4 flex-1 flex flex-col">
                 {/* Канал и платформа */}
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 text-gray-500 mr-2" />
-                    <span className="text-sm font-medium">{post.channelName}</span>
+                  <div className="flex items-center overflow-hidden">
+                    <User className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0" />
+                    <span className="text-sm font-medium truncate" title={post.channelName}>
+                      {post.channelName}
+                    </span>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center ml-2 flex-shrink-0">
                     {getPlatformIcon(post.platform)}
                   </div>
                 </div>
 
                 {/* Описание */}
-                <p className="text-sm text-gray-700 mb-2 line-clamp-2">{post.caption}</p>
+                <div className="relative group">
+                  <p className="text-sm text-gray-700 mb-2 line-clamp-2" title={post.caption}>
+                    {post.caption}
+                  </p>
+                  <div className="hidden group-hover:block absolute z-10 bg-white border border-gray-200 rounded-lg p-3 shadow-lg max-w-xs whitespace-normal">
+                    {post.caption}
+                  </div>
+                </div>
 
                 {/* Хештеги */}
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mb-3 overflow-hidden h-8">
                   {post.hashtags.map((tag) => (
-                    <span key={tag} className="text-xs text-[#2D46B9] bg-[#F1F4FF] px-2 py-1 rounded-full">
+                    <span 
+                      key={tag} 
+                      className="text-xs text-[#2D46B9] bg-[#F1F4FF] px-2 py-1 rounded-full truncate"
+                      title={tag}
+                    >
                       {tag}
                     </span>
                   ))}
