@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   Search, 
@@ -9,7 +9,12 @@ import {
   Image,
   Calendar as CalendarIcon,
   ChevronDown,
-  X
+  X,
+  Play,
+  User,
+  Instagram,
+  Youtube,
+  Facebook
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -25,23 +30,14 @@ interface TrendPost {
   hashtags: string[];
   platform: 'instagram' | 'youtube' | 'tiktok' | 'facebook';
   type: 'post' | 'reel' | 'video';
-}
-
-interface DateRange {
-  start: Date;
-  end: Date;
+  channelName: string;
+  engagement: number;
 }
 
 const Trends = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState<'24h' | '7d' | 'custom'>('24h');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    start: new Date(),
-    end: new Date()
-  });
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [customCategory, setCustomCategory] = useState<string>('');
+  const [showCategories, setShowCategories] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<'post' | 'reel' | 'video' | ''>('');
   const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'youtube' | 'tiktok' | 'facebook' | ''>('');
   const [loading, setLoading] = useState(false);
@@ -51,12 +47,7 @@ const Trends = () => {
     'Спорт и фитнес',
     'Еда и рестораны',
     'Мода',
-    'Технологии',
-    'Образование',
-    'Путешествия',
-    'Здоровье',
-    'Бизнес',
-    'Развлечения'
+    'Технологии'
   ];
 
   const contentTypes = [
@@ -72,7 +63,7 @@ const Trends = () => {
     { value: 'facebook', label: 'Facebook' }
   ];
 
-  const [trendingPosts, setTrendingPosts] = useState<TrendPost[]>([
+  const [trendingPosts] = useState<TrendPost[]>([
     {
       id: '1',
       imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
@@ -83,7 +74,9 @@ const Trends = () => {
       externalUrl: 'https://instagram.com/p/example1',
       hashtags: ['#успех', '#саморазвитие', '#мотивация'],
       platform: 'instagram',
-      type: 'post'
+      type: 'post',
+      channelName: '@lifestyle_expert',
+      engagement: 4.5
     },
     {
       id: '2',
@@ -95,7 +88,9 @@ const Trends = () => {
       externalUrl: 'https://youtube.com/watch?v=example2',
       hashtags: ['#дизайн', '#интерьер', '#тренды2025'],
       platform: 'youtube',
-      type: 'video'
+      type: 'video',
+      channelName: 'Design Masters',
+      engagement: 3.8
     },
     {
       id: '3',
@@ -107,57 +102,58 @@ const Trends = () => {
       externalUrl: 'https://tiktok.com/@user/video/example3',
       hashtags: ['#утро', '#продуктивность', '#рутина'],
       platform: 'tiktok',
-      type: 'reel'
+      type: 'reel',
+      channelName: '@morning_routine',
+      engagement: 6.2
+    },
+    {
+      id: '4',
+      imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      caption: 'Здоровое питание: 5 рецептов для энергичного дня #здоровье #рецепты #пп',
+      likes: 3200,
+      comments: 450,
+      timestamp: '2025-05-15T09:30:00Z',
+      externalUrl: 'https://instagram.com/p/example4',
+      hashtags: ['#здоровье', '#рецепты', '#пп'],
+      platform: 'instagram',
+      type: 'post',
+      channelName: '@healthy_food',
+      engagement: 5.1
+    },
+    {
+      id: '5',
+      imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      caption: 'Топ упражнений для домашних тренировок #фитнес #спорт #тренировки',
+      likes: 4100,
+      comments: 320,
+      timestamp: '2025-05-15T10:15:00Z',
+      externalUrl: 'https://youtube.com/watch?v=example5',
+      hashtags: ['#фитнес', '#спорт', '#тренировки'],
+      platform: 'youtube',
+      type: 'video',
+      channelName: 'FitnessPro',
+      engagement: 4.8
+    },
+    {
+      id: '6',
+      imageUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      caption: 'Модные тренды весны 2025 #мода #стиль #тренды',
+      likes: 2800,
+      comments: 410,
+      timestamp: '2025-05-15T11:00:00Z',
+      externalUrl: 'https://facebook.com/posts/example6',
+      hashtags: ['#мода', '#стиль', '#тренды'],
+      platform: 'facebook',
+      type: 'post',
+      channelName: 'Fashion Today',
+      engagement: 4.2
     }
   ]);
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      let filteredPosts = [...trendingPosts];
-      
-      if (selectedCategory || customCategory) {
-        const category = selectedCategory || customCategory;
-        filteredPosts = filteredPosts.filter(post => 
-          post.caption.toLowerCase().includes(category.toLowerCase()) ||
-          post.hashtags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-        );
-      }
-      
-      if (selectedContentType) {
-        filteredPosts = filteredPosts.filter(post => post.type === selectedContentType);
-      }
-      
-      if (selectedPlatform) {
-        filteredPosts = filteredPosts.filter(post => post.platform === selectedPlatform);
-      }
-      
-      const now = new Date();
-      let timeLimit: Date;
-      
-      if (selectedPeriod === '24h') {
-        timeLimit = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      } else if (selectedPeriod === '7d') {
-        timeLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else {
-        timeLimit = dateRange.start;
-      }
-      
-      filteredPosts = filteredPosts.filter(post => {
-        const postDate = new Date(post.timestamp);
-        return selectedPeriod === 'custom'
-          ? postDate >= dateRange.start && postDate <= dateRange.end
-          : postDate >= timeLimit;
-      });
-      
-      setTrendingPosts(filteredPosts);
-    } catch (error) {
-      console.error('Error fetching trending posts:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Имитация поиска
+    setTimeout(() => setLoading(false), 800);
   };
 
   const handleGenerateSimilar = (post: TrendPost) => {
@@ -169,180 +165,90 @@ const Trends = () => {
     return format(date, 'dd MMMM yyyy, HH:mm', { locale: ru });
   };
 
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram':
+        return <Instagram className="h-4 w-4 text-pink-600" />;
+      case 'youtube':
+        return <Youtube className="h-4 w-4 text-red-600" />;
+      case 'facebook':
+        return <Facebook className="h-4 w-4 text-blue-600" />;
+      case 'tiktok':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0011.14-4.02v-7a8.16 8.16 0 004.65 1.48V7.1a4.79 4.79 0 01-1.2-.41z"/>
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Тренды</h1>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Период
-            </label>
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg hover:border-[#2D46B9] focus:outline-none focus:ring-2 focus:ring-[#2D46B9]"
-            >
-              <span className="flex items-center">
-                <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
-                {selectedPeriod === '24h' ? 'Последние 24 часа' :
-                 selectedPeriod === '7d' ? 'Последние 7 дней' :
-                 'Выбрать период'}
-              </span>
-              <ChevronDown className="h-5 w-5 text-gray-500" />
-            </button>
-            
-            {showDatePicker && (
-              <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      setSelectedPeriod('24h');
-                      setShowDatePicker(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    Последние 24 часа
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedPeriod('7d');
-                      setShowDatePicker(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    Последние 7 дней
-                  </button>
-                  <hr className="my-2" />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Свой период:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="date"
-                        value={format(dateRange.start, 'yyyy-MM-dd')}
-                        onChange={(e) => setDateRange(prev => ({
-                          ...prev,
-                          start: new Date(e.target.value)
-                        }))}
-                        className="px-2 py-1 border border-gray-300 rounded-lg"
-                      />
-                      <input
-                        type="date"
-                        value={format(dateRange.end, 'yyyy-MM-dd')}
-                        onChange={(e) => setDateRange(prev => ({
-                          ...prev,
-                          end: new Date(e.target.value)
-                        }))}
-                        className="px-2 py-1 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPeriod('custom');
-                        setShowDatePicker(false);
-                      }}
-                      className="w-full px-4 py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90"
-                    >
-                      Применить
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Сфера
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={customCategory || selectedCategory}
-                onChange={(e) => {
-                  setCustomCategory(e.target.value);
-                  setSelectedCategory('');
-                }}
-                placeholder="Выберите или введите сферу..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
-              />
-              {(customCategory || selectedCategory) && (
-                <button
-                  onClick={() => {
-                    setCustomCategory('');
-                    setSelectedCategory('');
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {categories.slice(0, 3).map((category) => (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    setCustomCategory('');
-                  }}
-                  className={`px-3 py-1 text-sm rounded-full ${
-                    selectedCategory === category
-                      ? 'bg-[#2D46B9] text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Тип контента
-            </label>
-            <select
-              value={selectedContentType}
-              onChange={(e) => setSelectedContentType(e.target.value as any)}
+        {/* Поисковая строка и кнопка */}
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Поиск трендов..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
-            >
-              <option value="">Все типы</option>
-              {contentTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Источник
-            </label>
-            <select
-              value={selectedPlatform}
-              onChange={(e) => setSelectedPlatform(e.target.value as any)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
-            >
-              <option value="">Все платформы</option>
-              {platforms.map(platform => (
-                <option key={platform.value} value={platform.value}>
-                  {platform.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        <div className="flex justify-end">
           <button
             onClick={handleSearch}
-            className="px-6 py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors flex items-center"
+            className="px-6 py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors flex items-center whitespace-nowrap"
           >
             <Search className="h-5 w-5 mr-2" />
             Найти
           </button>
+        </div>
+
+        {/* Фильтры */}
+        <div className="flex gap-4">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+          >
+            <option value="">Выберите сферу</option>
+            {categories.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedContentType}
+            onChange={(e) => setSelectedContentType(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+          >
+            <option value="">Все типы контента</option>
+            {contentTypes.map(type => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedPlatform}
+            onChange={(e) => setSelectedPlatform(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D46B9] focus:border-transparent"
+          >
+            <option value="">Все платформы</option>
+            {platforms.map(platform => (
+              <option key={platform.value} value={platform.value}>
+                {platform.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -355,7 +261,8 @@ const Trends = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {trendingPosts.map((post) => (
             <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="aspect-video relative">
+              {/* Превью контента */}
+              <div className="relative aspect-[4/3]">
                 {post.imageUrl ? (
                   <img 
                     src={post.imageUrl} 
@@ -367,76 +274,68 @@ const Trends = () => {
                     <Image className="h-12 w-12 text-gray-400" />
                   </div>
                 )}
-                <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
-                  post.platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
-                  post.platform === 'youtube' ? 'bg-red-100 text-red-800' :
-                  post.platform === 'tiktok' ? 'bg-black text-white' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {platforms.find(p => p.value === post.platform)?.label}
-                </span>
+                
+                {(post.type === 'video' || post.type === 'reel') && (
+                  <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+                    <Play className="h-4 w-4 text-white" />
+                  </div>
+                )}
               </div>
 
+              {/* Информация о посте */}
               <div className="p-4">
-                <p className="text-gray-900 mb-2 line-clamp-2">{post.caption}</p>
-                
+                {/* Канал и платформа */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium">{post.channelName}</span>
+                  </div>
+                  <div className="flex items-center">
+                    {getPlatformIcon(post.platform)}
+                  </div>
+                </div>
+
+                {/* Описание */}
+                <p className="text-sm text-gray-700 mb-2 line-clamp-2">{post.caption}</p>
+
+                {/* Хештеги */}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {post.hashtags.map((tag) => (
-                    <span 
-                      key={tag} 
-                      className="px-2 py-1 bg-[#F1F4FF] text-[#2D46B9] rounded-full text-xs"
-                    >
+                    <span key={tag} className="text-xs text-[#2D46B9] bg-[#F1F4FF] px-2 py-1 rounded-full">
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                <p className="text-sm text-gray-500 mb-4">
+                {/* Дата */}
+                <div className="text-xs text-gray-500 mb-3">
                   {formatDate(post.timestamp)}
-                </p>
+                </div>
 
+                {/* Метрики */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <div className="flex items-center text-gray-600 text-xs mb-1">
-                      <Heart className="h-3 w-3 mr-1 text-pink-500" />
-                      Лайки
-                    </div>
-                    <div className="text-sm font-semibold">{post.likes.toLocaleString()}</div>
+                  <div className="bg-gray-50 p-2 rounded-lg text-center">
+                    <div className="text-sm font-medium">{post.likes.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Лайки</div>
                   </div>
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <div className="flex items-center text-gray-600 text-xs mb-1">
-                      <MessageSquare className="h-3 w-3 mr-1 text-blue-500" />
-                      Комментарии
-                    </div>
-                    <div className="text-sm font-semibold">{post.comments.toLocaleString()}</div>
+                  <div className="bg-gray-50 p-2 rounded-lg text-center">
+                    <div className="text-sm font-medium">{post.comments.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Комментарии</div>
                   </div>
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <div className="flex items-center text-gray-600 text-xs mb-1">
-                      <BarChart2 className="h-3 w-3 mr-1 text-[#2D46B9]" />
-                      Вовлеченность
-                    </div>
-                    <div className="text-sm font-semibold">
-                      {((post.likes + post.comments) / (post.likes * 0.01)).toFixed(2)}%
-                    </div>
+                  <div className="bg-gray-50 p-2 rounded-lg text-center">
+                    <div className="text-sm font-medium">{post.engagement}%</div>
+                    <div className="text-xs text-gray-500">Вовлечённость</div>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <button
-                    onClick={() => handleGenerateSimilar(post)}
-                    className="px-4 py-2 text-[#2D46B9] hover:bg-[#F1F4FF] rounded-lg transition-colors text-sm"
-                  >
-                    Сгенерировать похожее
-                  </button>
-                  <a 
-                    href={post.externalUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center text-gray-500 hover:text-[#2D46B9] transition-colors"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </div>
+                {/* Кнопка генерации */}
+                <button
+                  onClick={() => handleGenerateSimilar(post)}
+                  className="w-full py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors text-sm flex items-center justify-center"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Сгенерировать похожее
+                </button>
               </div>
             </div>
           ))}
