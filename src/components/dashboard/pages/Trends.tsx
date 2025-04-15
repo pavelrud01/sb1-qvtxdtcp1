@@ -46,7 +46,6 @@ const Trends = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<'instagram' | 'youtube' | 'tiktok' | 'facebook' | ''>('');
   const [loading, setLoading] = useState(false);
 
-  // Категории бизнеса
   const categories = [
     'Бьюти',
     'Спорт и фитнес',
@@ -60,14 +59,12 @@ const Trends = () => {
     'Развлечения'
   ];
 
-  // Типы контента
   const contentTypes = [
     { value: 'post', label: 'Пост' },
     { value: 'reel', label: 'Reels' },
     { value: 'video', label: 'Видео' }
   ];
 
-  // Платформы
   const platforms = [
     { value: 'instagram', label: 'Instagram' },
     { value: 'youtube', label: 'YouTube' },
@@ -75,7 +72,6 @@ const Trends = () => {
     { value: 'facebook', label: 'Facebook' }
   ];
 
-  // Sample trending posts data
   const [trendingPosts, setTrendingPosts] = useState<TrendPost[]>([
     {
       id: '1',
@@ -115,64 +111,58 @@ const Trends = () => {
     }
   ]);
 
-  useEffect(() => {
-    // Здесь будет логика загрузки данных с учетом фильтров
-    const fetchTrendingPosts = async () => {
-      setLoading(true);
-      try {
-        // Имитация API запроса
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        let filteredPosts = [...trendingPosts];
-        
-        // Фильтрация по категории
-        if (selectedCategory || customCategory) {
-          const category = selectedCategory || customCategory;
-          filteredPosts = filteredPosts.filter(post => 
-            post.caption.toLowerCase().includes(category.toLowerCase()) ||
-            post.hashtags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-          );
-        }
-        
-        // Фильтрация по типу контента
-        if (selectedContentType) {
-          filteredPosts = filteredPosts.filter(post => post.type === selectedContentType);
-        }
-        
-        // Фильтрация по платформе
-        if (selectedPlatform) {
-          filteredPosts = filteredPosts.filter(post => post.platform === selectedPlatform);
-        }
-        
-        // Фильтрация по периоду
-        const now = new Date();
-        let timeLimit: Date;
-        
-        if (selectedPeriod === '24h') {
-          timeLimit = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        } else if (selectedPeriod === '7d') {
-          timeLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else {
-          timeLimit = dateRange.start;
-        }
-        
-        filteredPosts = filteredPosts.filter(post => {
-          const postDate = new Date(post.timestamp);
-          return selectedPeriod === 'custom'
-            ? postDate >= dateRange.start && postDate <= dateRange.end
-            : postDate >= timeLimit;
-        });
-        
-        setTrendingPosts(filteredPosts);
-      } catch (error) {
-        console.error('Error fetching trending posts:', error);
-      } finally {
-        setLoading(false);
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      let filteredPosts = [...trendingPosts];
+      
+      if (selectedCategory || customCategory) {
+        const category = selectedCategory || customCategory;
+        filteredPosts = filteredPosts.filter(post => 
+          post.caption.toLowerCase().includes(category.toLowerCase()) ||
+          post.hashtags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+        );
       }
-    };
+      
+      if (selectedContentType) {
+        filteredPosts = filteredPosts.filter(post => post.type === selectedContentType);
+      }
+      
+      if (selectedPlatform) {
+        filteredPosts = filteredPosts.filter(post => post.platform === selectedPlatform);
+      }
+      
+      const now = new Date();
+      let timeLimit: Date;
+      
+      if (selectedPeriod === '24h') {
+        timeLimit = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      } else if (selectedPeriod === '7d') {
+        timeLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else {
+        timeLimit = dateRange.start;
+      }
+      
+      filteredPosts = filteredPosts.filter(post => {
+        const postDate = new Date(post.timestamp);
+        return selectedPeriod === 'custom'
+          ? postDate >= dateRange.start && postDate <= dateRange.end
+          : postDate >= timeLimit;
+      });
+      
+      setTrendingPosts(filteredPosts);
+    } catch (error) {
+      console.error('Error fetching trending posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchTrendingPosts();
-  }, [selectedPeriod, dateRange, selectedCategory, customCategory, selectedContentType, selectedPlatform]);
+  const handleGenerateSimilar = (post: TrendPost) => {
+    console.log('Generating similar content for:', post);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -183,10 +173,8 @@ const Trends = () => {
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Тренды</h1>
 
-      {/* Фильтры */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Период */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Период
@@ -263,7 +251,6 @@ const Trends = () => {
             )}
           </div>
 
-          {/* Сфера */}
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Сфера
@@ -311,7 +298,6 @@ const Trends = () => {
             </div>
           </div>
 
-          {/* Тип контента */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Тип контента
@@ -330,7 +316,6 @@ const Trends = () => {
             </select>
           </div>
 
-          {/* Источник */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Источник
@@ -349,120 +334,124 @@ const Trends = () => {
             </select>
           </div>
         </div>
+        
+        <div className="flex justify-end">
+          <button
+            onClick={handleSearch}
+            className="px-6 py-2 bg-[#2D46B9] text-white rounded-lg hover:bg-[#2D46B9]/90 transition-colors flex items-center"
+          >
+            <Search className="h-5 w-5 mr-2" />
+            Найти
+          </button>
+        </div>
       </div>
 
-      {/* Трендовый контент */}
-      <div className="space-y-6">
-        {loading ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D46B9]"></div>
-            <span className="ml-3 text-gray-600">Загрузка трендов...</span>
-          </div>
-        ) : trendingPosts.length > 0 ? (
-          trendingPosts.map((post) => (
-            <div key={post.id} className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Превью изображения */}
-                <div className="md:w-1/4">
-                  {post.imageUrl ? (
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={post.imageUrl} 
-                        alt="Превью поста" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Image className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="mt-2 flex items-center justify-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      post.platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
-                      post.platform === 'youtube' ? 'bg-red-100 text-red-800' :
-                      post.platform === 'tiktok' ? 'bg-black text-white' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {platforms.find(p => p.value === post.platform)?.label}
+      {loading ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D46B9]"></div>
+          <span className="ml-3 text-gray-600">Загрузка трендов...</span>
+        </div>
+      ) : trendingPosts.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {trendingPosts.map((post) => (
+            <div key={post.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="aspect-video relative">
+                {post.imageUrl ? (
+                  <img 
+                    src={post.imageUrl} 
+                    alt="Превью поста" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <Image className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+                <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
+                  post.platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
+                  post.platform === 'youtube' ? 'bg-red-100 text-red-800' :
+                  post.platform === 'tiktok' ? 'bg-black text-white' :
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  {platforms.find(p => p.value === post.platform)?.label}
+                </span>
+              </div>
+
+              <div className="p-4">
+                <p className="text-gray-900 mb-2 line-clamp-2">{post.caption}</p>
+                
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {post.hashtags.map((tag) => (
+                    <span 
+                      key={tag} 
+                      className="px-2 py-1 bg-[#F1F4FF] text-[#2D46B9] rounded-full text-xs"
+                    >
+                      {tag}
                     </span>
+                  ))}
+                </div>
+
+                <p className="text-sm text-gray-500 mb-4">
+                  {formatDate(post.timestamp)}
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center text-gray-600 text-xs mb-1">
+                      <Heart className="h-3 w-3 mr-1 text-pink-500" />
+                      Лайки
+                    </div>
+                    <div className="text-sm font-semibold">{post.likes.toLocaleString()}</div>
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center text-gray-600 text-xs mb-1">
+                      <MessageSquare className="h-3 w-3 mr-1 text-blue-500" />
+                      Комментарии
+                    </div>
+                    <div className="text-sm font-semibold">{post.comments.toLocaleString()}</div>
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center text-gray-600 text-xs mb-1">
+                      <BarChart2 className="h-3 w-3 mr-1 text-[#2D46B9]" />
+                      Вовлеченность
+                    </div>
+                    <div className="text-sm font-semibold">
+                      {((post.likes + post.comments) / (post.likes * 0.01)).toFixed(2)}%
+                    </div>
                   </div>
                 </div>
-                
-                {/* Контент и метрики */}
-                <div className="md:w-3/4">
-                  <div className="mb-3">
-                    <p className="text-gray-900 mb-2 line-clamp-3">{post.caption}</p>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {post.hashtags.map((tag) => (
-                        <span 
-                          key={tag} 
-                          className="px-2 py-1 bg-[#F1F4FF] text-[#2D46B9] rounded-full text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(post.timestamp)}
-                    </p>
-                  </div>
-                  
-                  {/* Метрики */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center text-gray-600 text-sm mb-1">
-                        <Heart className="h-4 w-4 mr-1 text-pink-500" />
-                        Лайки
-                      </div>
-                      <div className="text-lg font-semibold">{post.likes.toLocaleString()}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center text-gray-600 text-sm mb-1">
-                        <MessageSquare className="h-4 w-4 mr-1 text-blue-500" />
-                        Комментарии
-                      </div>
-                      <div className="text-lg font-semibold">{post.comments.toLocaleString()}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg md:col-span-2">
-                      <div className="flex items-center text-gray-600 text-sm mb-1">
-                        <BarChart2 className="h-4 w-4 mr-1 text-[#2D46B9]" />
-                        Вовлеченность
-                      </div>
-                      <div className="text-lg font-semibold">
-                        {((post.likes + post.comments) / (post.likes * 0.01)).toFixed(2)}%
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Кнопка подробнее */}
-                  <div className="flex justify-end">
-                    <a 
-                      href={post.externalUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center px-4 py-2 text-[#2D46B9] hover:bg-[#F1F4FF] rounded-lg transition-colors"
-                    >
-                      Подробнее
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </a>
-                  </div>
+
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => handleGenerateSimilar(post)}
+                    className="px-4 py-2 text-[#2D46B9] hover:bg-[#F1F4FF] rounded-lg transition-colors text-sm"
+                  >
+                    Сгенерировать похожее
+                  </button>
+                  <a 
+                    href={post.externalUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center text-gray-500 hover:text-[#2D46B9] transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
                 </div>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div className="text-gray-400 mb-4">
-              <Search className="h-12 w-12 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-700">Тренды не найдены</h3>
-              <p className="text-gray-500 mt-2">
-                Попробуйте изменить параметры поиска или выбрать другую сферу
-              </p>
-            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="text-gray-400 mb-4">
+            <Search className="h-12 w-12 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-700">Тренды не найдены</h3>
+            <p className="text-gray-500 mt-2">
+              Попробуйте изменить параметры поиска или выбрать другую сферу
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
